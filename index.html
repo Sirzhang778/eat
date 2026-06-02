@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什么 - 升达美食随机选</title>
+    <style>
+        /* ========== 全局样式 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 30%, #e8f5e9 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: default;
+        }
+
+        /* ========== 主容器 ========== */
+        .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 48px 36px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(33, 150, 243, 0.12);
+            text-align: center;
+        }
+
+        /* ========== 标题区域 ========== */
+        .header {
+            margin-bottom: 40px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .header .icon {
+            font-size: 56px;
+            display: block;
+            margin: 0 auto 8px auto;
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #1565c0;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: #64b5f6;
+            margin-top: 6px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* ========== 三个餐别按钮卡片 ========== */
+        .meal-cards {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+        }
+
+        .meal-card {
+            flex: 1;
+            min-width: 110px;
+            max-width: 150px;
+            padding: 24px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(145deg, #e3f2fd, #bbdefb);
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.10);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: #1565c0;
+            font-family: inherit;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 28px rgba(33, 150, 243, 0.22);
+            background: linear-gradient(145deg, #bbdefb, #90caf9);
+        }
+
+        .meal-card:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+        }
+
+        .meal-card.active {
+            background: linear-gradient(145deg, #42a5f5, #1e88e5);
+            color: #fff;
+            box-shadow: 0 8px 28px rgba(30, 136, 229, 0.35);
+        }
+
+        .meal-card .meal-emoji {
+            font-size: 36px;
+        }
+
+        .meal-card .meal-label {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .meal-card .meal-hint {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* ========== 结果展示区域 ========== */
+        .result-area {
+            background: linear-gradient(145deg, #f0f8ff, #e8f0fe);
+            border-radius: 20px;
+            padding: 32px 24px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 2px dashed transparent;
+        }
+
+        .result-area.has-result {
+            border-color: #90caf9;
+            background: linear-gradient(145deg, #e3f2fd, #f0f8ff);
+        }
+
+        .result-placeholder {
+            color: #90caf9;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+
+        .result-placeholder .placeholder-icon {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .result-content {
+            display: none;
+            width: 100%;
+        }
+
+        .result-content.show {
+            display: block;
+        }
+
+        .result-dish {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0d47a1;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .result-restaurant {
+            display: inline-block;
+            font-size: 15px;
+            color: #fff;
+            background: linear-gradient(135deg, #64b5f6, #42a5f5);
+            padding: 6px 18px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .result-meal-tag {
+            display: inline-block;
+            font-size: 12px;
+            color: #64b5f6;
+            background: rgba(100, 181, 246, 0.12);
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        /* ========== 换一个按钮 ========== */
+        .btn-refresh {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 32px;
+            border-radius: 30px;
+            border: 2px solid #64b5f6;
+            background: #fff;
+            color: #1e88e5;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+
+        .btn-refresh.show {
+            display: inline-block;
+        }
+
+        .btn-refresh:hover {
+            background: #e3f2fd;
+            border-color: #1e88e5;
+            transform: scale(1.04);
+        }
+
+        .btn-refresh:active {
+            transform: scale(0.97);
+        }
+
+        /* ========== 底部信息 ========== */
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: #90caf9;
+            letter-spacing: 1px;
+        }
+
+        .footer-note {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #b0bec5;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========== 响应式设计 - 手机端 ========== */
+        @media (max-width: 480px) {
+            .container {
+                padding: 32px 20px;
+                border-radius: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .meal-cards {
+                gap: 10px;
+            }
+
+            .meal-card {
+                padding: 18px 10px;
+                border-radius: 16px;
+                min-width: 90px;
+            }
+
+            .meal-card .meal-emoji {
+                font-size: 28px;
+            }
+
+            .meal-card .meal-label {
+                font-size: 15px;
+            }
+
+            .result-dish {
+                font-size: 26px;
+            }
+
+            .result-area {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ===== 标题 ===== -->
+        <div class="header">
+            <span class="icon">🍽️</span>
+            <h1>今天吃什么？</h1>
+            <p class="subtitle">郑州升达经贸管理学院 · 美食随机选</p>
+        </div>
+
+        <!-- ===== 三个餐别按钮 ===== -->
+        <div class="meal-cards">
+            <button class="meal-card" onclick="pickMeal('breakfast')" id="btn-breakfast">
+                <span class="meal-emoji">🌅</span>
+                <span class="meal-label">早餐</span>
+                <span class="meal-hint">6:00 - 9:00</span>
+            </button>
+            <button class="meal-card" onclick="pickMeal('lunch')" id="btn-lunch">
+                <span class="meal-emoji">☀️</span>
+                <span class="meal-label">午餐</span>
+                <span class="meal-hint">11:00 - 13:00</span>
+            </button>
+            <button class="meal-card" onclick="pickMeal('dinner')" id="btn-dinner">
+                <span class="meal-emoji">🌙</span>
+                <span class="meal-label">晚餐</span>
+                <span class="meal-hint">17:00 - 19:00</span>
+            </button>
+        </div>
+
+        <!-- ===== 结果展示区 ===== -->
+        <div class="result-area" id="resultArea">
+            <div class="result-placeholder" id="placeholder">
+                <span class="placeholder-icon">👆</span>
+                点击上方按钮，帮你决定吃什么
+            </div>
+            <div class="result-content" id="resultContent">
+                <div class="result-meal-tag" id="resultMealTag"></div>
+                <div class="result-dish" id="resultDish"></div>
+                <div class="result-restaurant" id="resultRestaurant"></div>
+            </div>
+        </div>
+
+        <!-- ===== 换一个按钮 ===== -->
+        <button class="btn-refresh" id="btnRefresh" onclick="reroll()">
+            🔄 换一个
+        </button>
+
+        <!-- ===== 底部 ===== -->
+        <p class="footer">🍜 涵盖升达校内龙湖食府、文萃苑、茗羽餐厅等11大食堂</p>
+        <p class="footer-note">仅支持淘宝闪购上架的商家，望谅解</p>
+
+    </div>
+
+    <script>
+        // =============================================
+        // 菜品数据 — 修改这里即可更新菜单！
+        // 格式: { name: "菜品名", restaurant: "餐厅名" }
+        // =============================================
+
+        const menuData = {
+            // ---------- 早餐 ----------
+            breakfast: [
+                // 龙湖食府
+                { name: "优质牛肉胡辣汤", restaurant: "龙湖食府" },
+                { name: "包子粥铺", restaurant: "龙湖食府" },
+                { name: "麦香馅饼", restaurant: "龙湖食府" },
+                { name: "老上海馄饨", restaurant: "龙湖食府" },
+                { name: "豆腐脑", restaurant: "龙湖食府" },
+                { name: "手工鲜包", restaurant: "龙湖食府" },
+                // 老兵餐厅
+                { name: "逍遥镇胡辣汤", restaurant: "老兵餐厅" },
+                { name: "好粥道", restaurant: "老兵餐厅" },
+                { name: "山东杂粮煎饼", restaurant: "老兵餐厅" },
+                { name: "手工鲜包", restaurant: "老兵餐厅" },
+                // 文萃苑
+                { name: "元气玉米铺", restaurant: "文萃苑" },
+                { name: "煎饼", restaurant: "文萃苑" },
+                { name: "粥品", restaurant: "文萃苑" },
+                { name: "饭团", restaurant: "文萃苑" },
+                // 品途餐厅
+                { name: "逍遥镇胡辣汤", restaurant: "品途餐厅" },
+                { name: "酱香饼", restaurant: "品途餐厅" },
+                { name: "粥", restaurant: "品途餐厅" },
+                // 茗羽餐厅
+                { name: "粥", restaurant: "茗羽餐厅" },
+                { name: "煎饼", restaurant: "茗羽餐厅" },
+                { name: "包子", restaurant: "茗羽餐厅" },
+                { name: "蒸饺", restaurant: "茗羽餐厅" },
+                // 升达餐厅
+                { name: "生煎包", restaurant: "升达餐厅" },
+                { name: "粥", restaurant: "升达餐厅" },
+                { name: "胡辣汤", restaurant: "升达餐厅" },
+                // 生活馆
+                { name: "粥", restaurant: "生活馆" },
+                { name: "馄饨", restaurant: "生活馆" },
+                { name: "包子", restaurant: "生活馆" },
+            ],
+
+            // ---------- 午餐 ----------
+            lunch: [
+                // 龙湖食府
+                { name: "精品快餐", restaurant: "龙湖食府" },
+                { name: "大米套餐", restaurant: "龙湖食府" },
+                { name: "米饭先生", restaurant: "龙湖食府" },
+                { name: "嘉豫稻香鸭腿饭", restaurant: "龙湖食府" },
+                { name: "烤鸭饭", restaurant: "龙湖食府" },
+                { name: "拌鸡腿饭", restaurant: "龙湖食府" },
+                { name: "椒上瘾水煮肉片", restaurant: "龙湖食府" },
+                { name: "盖小达盖浇饭", restaurant: "龙湖食府" },
+                { name: "嘎嘎香老饭盒", restaurant: "龙湖食府" },
+                { name: "大型精品自选菜", restaurant: "龙湖食府" },
+                // 生活馆
+                { name: "土耳其烤肉饭", restaurant: "生活馆" },
+                { name: "隆江猪脚饭", restaurant: "生活馆" },
+                { name: "精品盖饭", restaurant: "生活馆" },
+                // 老兵餐厅
+                { name: "贤满楼烤鸭饭", restaurant: "老兵餐厅" },
+                { name: "刘姥姥猪脚饭", restaurant: "老兵餐厅" },
+                { name: "湘六哥辣椒炒肉", restaurant: "老兵餐厅" },
+                { name: "天之福私房菜", restaurant: "老兵餐厅" },
+                { name: "米菜多多", restaurant: "老兵餐厅" },
+                { name: "老兵大烩菜", restaurant: "老兵餐厅" },
+                { name: "摇滚炒鸡", restaurant: "老兵餐厅" },
+                { name: "锡纸炒鸡", restaurant: "老兵餐厅" },
+                // 文萃苑
+                { name: "小阿哥煲仔饭", restaurant: "文萃苑" },
+                { name: "鲜卤猪脚饭", restaurant: "文萃苑" },
+                { name: "东北淇遇水煮肉片", restaurant: "文萃苑" },
+                { name: "焱湘子辣椒炒肉", restaurant: "文萃苑" },
+                { name: "有家小炒盖饭", restaurant: "文萃苑" },
+                { name: "酱鸭百媚鸡", restaurant: "文萃苑" },
+                { name: "岁三耕单锅现炒", restaurant: "文萃苑" },
+                { name: "大碗盖浇饭", restaurant: "文萃苑" },
+                { name: "木桶饭", restaurant: "文萃苑" },
+                { name: "茶泡饭", restaurant: "文萃苑" },
+                { name: "蛋包饭", restaurant: "文萃苑" },
+                { name: "热卤拌饭", restaurant: "文萃苑" },
+                { name: "鲜拌鸡腿肉饭", restaurant: "文萃苑" },
+                { name: "炸鸡拌饭", restaurant: "文萃苑" },
+                { name: "昆吉双拼拌饭", restaurant: "文萃苑" },
+                { name: "花甲尖椒鸡", restaurant: "文萃苑" },
+                { name: "干拌冒菜", restaurant: "文萃苑" },
+                // 品途餐厅
+                { name: "平价川豫快餐", restaurant: "品途餐厅" },
+                { name: "饿魔王干饭", restaurant: "品途餐厅" },
+                { name: "烤鸭拌饭", restaurant: "品途餐厅" },
+                // 茗羽餐厅
+                { name: "精品快餐", restaurant: "茗羽餐厅" },
+                { name: "肉朵香小坛焖肉", restaurant: "茗羽餐厅" },
+                { name: "黄焖鸡米饭", restaurant: "茗羽餐厅" },
+                { name: "吴氏重庆香辣鸡煲", restaurant: "茗羽餐厅" },
+                // 升达餐厅
+                { name: "猪脚饭", restaurant: "升达餐厅" },
+                { name: "肉多多拌饭", restaurant: "升达餐厅" },
+                { name: "东北熏肉大饼烩菜", restaurant: "升达餐厅" },
+                { name: "成都冒烤鸭", restaurant: "升达餐厅" },
+                { name: "大盘鸡", restaurant: "升达餐厅" },
+                { name: "小火锅串串香", restaurant: "升达餐厅" },
+                // 桃李情
+                { name: "小炒盖饭", restaurant: "桃李情" },
+                // 信阳餐厅
+                { name: "小炒", restaurant: "信阳餐厅" },
+                { name: "盖浇饭", restaurant: "信阳餐厅" },
+                // 台湾餐厅
+                { name: "盖浇饭", restaurant: "台湾餐厅" },
+                // 温馨园
+                { name: "麻辣爆肚", restaurant: "温馨园" },
+            ],
+
+            // ---------- 晚餐 ----------
+            dinner: [
+                // 龙湖食府
+                { name: "五谷渔粉", restaurant: "龙湖食府" },
+                { name: "兰州拉面", restaurant: "龙湖食府" },
+                { name: "牛肉烩面", restaurant: "龙湖食府" },
+                { name: "开封刀削面", restaurant: "龙湖食府" },
+                { name: "姐弟俩土豆粉", restaurant: "龙湖食府" },
+                { name: "花溪牛肉粉", restaurant: "龙湖食府" },
+                { name: "汴梁米线", restaurant: "龙湖食府" },
+                { name: "骨汤粉面", restaurant: "龙湖食府" },
+                { name: "特色大盘鸡拌面", restaurant: "龙湖食府" },
+                // 生活馆
+                { name: "鲜云阿婆馄饨面", restaurant: "生活馆" },
+                { name: "乌冬说中式乌冬面", restaurant: "生活馆" },
+                { name: "重庆骨汤麻辣烫", restaurant: "生活馆" },
+                { name: "招牌手工水饺", restaurant: "生活馆" },
+                // 老兵餐厅
+                { name: "青海牛肉面", restaurant: "老兵餐厅" },
+                { name: "郏县饸饹面", restaurant: "老兵餐厅" },
+                { name: "山西刀削面", restaurant: "老兵餐厅" },
+                { name: "汉丰热干面", restaurant: "老兵餐厅" },
+                { name: "刘记火锅粉面", restaurant: "老兵餐厅" },
+                { name: "油泼面", restaurant: "老兵餐厅" },
+                { name: "侗阿妹鲜烫牛肉粉", restaurant: "老兵餐厅" },
+                { name: "过桥米线", restaurant: "老兵餐厅" },
+                { name: "品上品酸辣粉", restaurant: "老兵餐厅" },
+                { name: "骨汤麻辣烫", restaurant: "老兵餐厅" },
+                // 文萃苑
+                { name: "老椒头辣子鸡拌面", restaurant: "文萃苑" },
+                { name: "越南粉", restaurant: "文萃苑" },
+                { name: "土豆粉牛肉粉", restaurant: "文萃苑" },
+                { name: "柳州螺蛳粉", restaurant: "文萃苑" },
+                { name: "东北抚顺麻辣烫", restaurant: "文萃苑" },
+                { name: "咕嘟花小甲花甲粉", restaurant: "文萃苑" },
+                { name: "烤冷面", restaurant: "文萃苑" },
+                { name: "酸辣粉", restaurant: "文萃苑" },
+                // 品途餐厅
+                { name: "牛杂面", restaurant: "品途餐厅" },
+                { name: "东北黏糊面", restaurant: "品途餐厅" },
+                { name: "小挣家麻辣烫", restaurant: "品途餐厅" },
+                // 茗羽餐厅
+                { name: "一路飘香麻辣烫", restaurant: "茗羽餐厅" },
+                { name: "鱼粉", restaurant: "茗羽餐厅" },
+                { name: "新疆炒米粉", restaurant: "茗羽餐厅" },
+                { name: "汐汐螺蛳粉", restaurant: "茗羽餐厅" },
+                { name: "胖子砂锅", restaurant: "茗羽餐厅" },
+                { name: "天下好面", restaurant: "茗羽餐厅" },
+                { name: "襄阳牛肉热干面", restaurant: "茗羽餐厅" },
+                // 升达餐厅
+                { name: "酸辣粉", restaurant: "升达餐厅" },
+                { name: "肉夹馍", restaurant: "升达餐厅" },
+                { name: "老友粉", restaurant: "升达餐厅" },
+                { name: "过桥米线", restaurant: "升达餐厅" },
+                { name: "老炸酱面", restaurant: "升达餐厅" },
+                { name: "饸饹面", restaurant: "升达餐厅" },
+                { name: "手工水饺", restaurant: "升达餐厅" },
+                { name: "麻辣烫", restaurant: "升达餐厅" },
+                { name: "羊肉烩面", restaurant: "升达餐厅" },
+                { name: "热干面", restaurant: "升达餐厅" },
+                { name: "牛筋面", restaurant: "升达餐厅" },
+                // 温馨园
+                { name: "炒刀削面", restaurant: "温馨园" },
+                { name: "鸡丁刀削面", restaurant: "温馨园" },
+                { name: "麻辣烫", restaurant: "温馨园" },
+                { name: "盖浇饭", restaurant: "温馨园" },
+                { name: "凉粉", restaurant: "温馨园" },
+                // 信阳餐厅
+                { name: "热干面", restaurant: "信阳餐厅" },
+                { name: "小炒", restaurant: "信阳餐厅" },
+                { name: "盖浇饭", restaurant: "信阳餐厅" },
+                // 台湾餐厅
+                { name: "黄焖鸡米饭", restaurant: "台湾餐厅" },
+                { name: "羊杂汤", restaurant: "台湾餐厅" },
+                { name: "牛肉面", restaurant: "台湾餐厅" },
+                { name: "小炒", restaurant: "台湾餐厅" },
+            ],
+        };
+
+        // 餐别中文名映射
+        const mealNames = {
+            breakfast: "早餐",
+            lunch: "午餐",
+            dinner: "晚餐",
+        };
+
+        // 记录上次结果，避免连续重复
+        let lastResult = {
+            breakfast: null,
+            lunch: null,
+            dinner: null,
+        };
+
+        let currentMeal = null;
+
+        // =============================================
+        // 核心函数：随机挑选一道菜
+        // =============================================
+        function pickMeal(mealType) {
+            const list = menuData[mealType];
+            if (!list || list.length === 0) return;
+
+            // 随机选，但避免与上一次重复（如果有多于1个选项）
+            let index;
+            if (list.length === 1) {
+                index = 0;
+            } else {
+                do {
+                    index = Math.floor(Math.random() * list.length);
+                } while (list[index] === lastResult[mealType] && list.length > 1);
+            }
+
+            const picked = list[index];
+            lastResult[mealType] = picked;
+            currentMeal = mealType;
+
+            // 更新 UI - 高亮当前按钮
+            document.querySelectorAll(".meal-card").forEach(btn => btn.classList.remove("active"));
+            document.getElementById("btn-" + mealType).classList.add("active");
+
+            // 显示结果
+            displayResult(picked, mealType);
+        }
+
+        // =============================================
+        // 显示结果
+        // =============================================
+        function displayResult(dish, mealType) {
+            const resultArea = document.getElementById("resultArea");
+            const placeholder = document.getElementById("placeholder");
+            const resultContent = document.getElementById("resultContent");
+            const resultDish = document.getElementById("resultDish");
+            const resultRestaurant = document.getElementById("resultRestaurant");
+            const resultMealTag = document.getElementById("resultMealTag");
+            const btnRefresh = document.getElementById("btnRefresh");
+
+            // 隐藏占位文字，显示结果
+            placeholder.style.display = "none";
+            resultContent.classList.add("show");
+            resultArea.classList.add("has-result");
+            btnRefresh.classList.add("show");
+
+            // 填入内容
+            resultMealTag.textContent = mealNames[mealType];
+            resultDish.textContent = dish.name;
+            resultRestaurant.textContent = "📍 " + dish.restaurant;
+
+            // 添加小动画：结果区域轻微弹跳
+            resultContent.style.animation = "none";
+            resultContent.offsetHeight; // 触发回流
+            resultContent.style.animation = "popIn 0.35s ease-out";
+        }
+
+        // =============================================
+        // 换一个（在同餐别内重新随机）
+        // =============================================
+        function reroll() {
+            if (!currentMeal) return;
+            pickMeal(currentMeal);
+        }
+
+        // =============================================
+        // 添加弹出动画样式
+        // =============================================
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            @keyframes popIn {
+                0%   { transform: scale(0.85); opacity: 0; }
+                60%  { transform: scale(1.04); opacity: 1; }
+                100% { transform: scale(1);    opacity: 1; }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    </script>
+
+</body>
+</html>
