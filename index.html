@@ -532,6 +532,11 @@
             ],
         };
 
+        // 将午餐和晚餐菜品合并，两份菜单共享同一份数据
+        const combinedLunchDinner = [...menuData.lunch, ...menuData.dinner];
+        menuData.lunch = combinedLunchDinner;
+        menuData.dinner = combinedLunchDinner;
+
         // 餐别中文名映射
         const mealNames = {
             breakfast: "早餐",
@@ -546,28 +551,51 @@
             dinner: null,
         };
 
+        // 降权池：记录被"换一个"换掉的菜品，降低其出现概率
+        let cooledDownItems = {
+            breakfast: [],
+            lunch: [],
+            dinner: [],
+        };
+
         let currentMeal = null;
 
         // =============================================
-        // 核心函数：随机挑选一道菜
+        // 核心函数：加权随机挑选一道菜
         // =============================================
         function pickMeal(mealType) {
             const list = menuData[mealType];
             if (!list || list.length === 0) return;
 
-            // 随机选，但避免与上一次重复（如果有多于1个选项）
-            let index;
-            if (list.length === 1) {
-                index = 0;
-            } else {
-                do {
-                    index = Math.floor(Math.random() * list.length);
-                } while (list[index] === lastResult[mealType] && list.length > 1);
+            // 切换餐别时，重置降权池
+            if (currentMeal && currentMeal !== mealType) {
+                cooledDownItems[mealType] = [];
+            }
+
+            currentMeal = mealType;
+
+            // 构建权重数组：降权菜品权重为 0.15，正常为 1.0
+            const weights = list.map(item => {
+                const isCooledDown = cooledDownItems[mealType].some(
+                    cooled => cooled.name === item.name && cooled.restaurant === item.restaurant
+                );
+                return isCooledDown ? 0.15 : 1.0;
+            });
+
+            // 加权随机选择
+            const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+            let rand = Math.random() * totalWeight;
+            let index = 0;
+            for (let i = 0; i < list.length; i++) {
+                rand -= weights[i];
+                if (rand <= 0) {
+                    index = i;
+                    break;
+                }
             }
 
             const picked = list[index];
             lastResult[mealType] = picked;
-            currentMeal = mealType;
 
             // 更新 UI - 高亮当前按钮
             document.querySelectorAll(".meal-card").forEach(btn => btn.classList.remove("active"));
@@ -607,10 +635,15 @@
         }
 
         // =============================================
-        // 换一个（在同餐别内重新随机）
+        // 换一个（将当前菜品降权，再重新随机）
         // =============================================
         function reroll() {
             if (!currentMeal) return;
+            // 把当前菜品加入降权池，降低它再次出现的概率
+            const currentItem = lastResult[currentMeal];
+            if (currentItem) {
+                cooledDownItems[currentMeal].push(currentItem);
+            }
             pickMeal(currentMeal);
         }
 
